@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inferify · Evidence infrastructure for high-stakes AI</title>
+<meta name="description" content="Inferify writes a tamper-evident evidence record for every inference your model makes: version, input fingerprint, output, confidence, and whether the model was inside its validated operating regime.">
+<link rel="icon" type="image/png" href="inferify_logo.png">
+<link rel="apple-touch-icon" href="inferify_logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EAE4DA;
+    --paper-2:#F2ECE2;
+    --paper-3:#FAF6EE;
+    --ink:#262019;
+    --ink-soft:#3C352B;
+    --muted:#6F6657;
+    --faint:#9C927E;
+    --line:rgba(38,32,25,0.12);
+    --line-2:rgba(38,32,25,0.22);
+    --valid:#4E7E5A;
+    --valid-dim:rgba(78,126,90,0.12);
+    --flag:#A8492F;
+    --flag-dim:rgba(168,73,47,0.11);
+    --maxw:1140px;
+    --gutter:104px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Archivo",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
+  }
+  /* paper grain + faint warm wash */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6;
+    background:radial-gradient(120% 80% at 50% -10%, rgba(78,126,90,0.05), transparent 55%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;mix-blend-mode:multiply;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative;z-index:1}
+  a{color:inherit;text-decoration:none}
+  ::selection{background:var(--valid);color:var(--paper-3)}
+  :focus-visible{outline:2px solid var(--valid);outline-offset:3px;border-radius:3px}
+
+  .shell{max-width:var(--maxw);margin:0 auto;padding:0 28px}
+  .spine{position:absolute;left:calc((100vw - var(--maxw))/2 + 28px);top:0;bottom:0;width:1px;background:var(--line);z-index:1}
+  @media(max-width:1080px){.spine{display:none}}
+
+  .serif{font-family:"Fraunces",Georgia,serif}
+  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+
+  /* ---------- nav ---------- */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
+    background:rgba(234,228,218,0.78);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:var(--maxw);margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:30px;height:30px;object-fit:cover;border-radius:7px;border:1px solid var(--line);flex:none}
+  .brand .word{font-family:"Fraunces",serif;font-weight:600;font-size:21px;letter-spacing:-.01em}
+  .nav-links{display:flex;align-items:center;gap:4px}
+  .nav-links a{font-size:13.5px;color:var(--muted);padding:8px 12px;border-radius:7px;transition:color .15s,background .15s}
+  .nav-links a:hover{color:var(--ink);background:rgba(38,32,25,0.045)}
+  .btn{font-family:"Archivo",sans-serif;font-size:14px;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;transition:transform .12s,background .15s,border-color .15s,color .15s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .btn:active{transform:translateY(1px)}
+  .btn-primary{background:var(--ink);color:var(--paper-3);padding:9px 17px}
+  .btn-primary:hover{background:#000}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--line-2);padding:9px 17px}
+  .btn-ghost:hover{border-color:var(--ink)}
+  .btn-lg{padding:13px 22px;font-size:15px;border-radius:10px}
+  .menu-btn{display:none;background:none;border:1px solid var(--line-2);color:var(--ink);width:40px;height:40px;border-radius:9px;cursor:pointer;font-size:18px}
+  @media(max-width:840px){.nav-links,.nav-in .btn-primary{display:none}.menu-btn{display:inline-flex;align-items:center;justify-content:center}}
+  .mobile-menu{display:none;border-bottom:1px solid var(--line);background:var(--paper);padding:10px 28px 18px}
+  .mobile-menu.open{display:block}
+  .mobile-menu a{display:block;padding:12px 4px;color:var(--muted);border-bottom:1px solid var(--line);font-size:15px}
+  .mobile-menu .btn-primary{display:flex;justify-content:center;margin-top:14px;width:100%}
+
+  /* ---------- section scaffolding ---------- */
+  section{position:relative;padding:94px 0}
+  .node{position:absolute;left:calc((100vw - var(--maxw))/2 + 28px);width:10px;height:10px;border-radius:50%;background:var(--paper);border:1px solid var(--line-2);margin-left:-5px;margin-top:6px;z-index:2}
+  .node::after{content:"";position:absolute;inset:2px;border-radius:50%;background:var(--faint)}
+  @media(max-width:1080px){.node{display:none}}
+  .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:10px}
+  .eyebrow .idx{color:var(--valid)}
+  h2{font-family:"Fraunces",serif;font-size:clamp(30px,4.6vw,48px);line-height:1.02;letter-spacing:-.018em;font-weight:600;margin:16px 0 0;text-wrap:balance}
+  .lede{font-size:17px;line-height:1.62;color:var(--muted);max-width:560px;margin:18px 0 0;text-wrap:pretty}
+  .pad-l{padding-left:var(--gutter)}
+  @media(max-width:1080px){.pad-l{padding-left:0}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:74px 0 58px;border-bottom:1px solid var(--line)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+  @media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:40px}}
+  .h1{font-family:"Fraunces",serif;font-size:clamp(42px,6.6vw,76px);line-height:.99;letter-spacing:-.02em;font-weight:600;margin:22px 0 0;text-wrap:balance}
+  .h1 .sig{font-style:italic;color:var(--valid)}
+  .hero p.lede{max-width:540px;font-size:18px}
+  .micro{margin-top:16px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--faint);letter-spacing:.02em}
+
+  .tag{display:inline-flex;align-items:center;gap:9px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
+    border:1px solid var(--line-2);padding:7px 13px;border-radius:100px;background:var(--paper-2)}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--valid);box-shadow:0 0 0 3px var(--valid-dim)}
+
+  /* ---------- access form ---------- */
+  .access{display:flex;gap:10px;margin-top:30px;flex-wrap:wrap}
+  .access input{font-family:"Archivo",sans-serif;font-size:15px;color:var(--ink);background:var(--paper-3);border:1px solid var(--line-2);border-radius:10px;padding:13px 16px;min-width:230px;flex:1}
+  .access input::placeholder{color:var(--faint)}
+  .access input:focus{outline:none;border-color:var(--valid)}
+  .access.sent input,.access.sent button{display:none}
+  .sent-msg{display:none;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--valid);margin-top:30px;line-height:1.5}
+  .access.sent + .sent-msg,.sent-msg.show{display:block}
+  .alt-cta{margin-top:14px}
+  .alt-cta a{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line-2);padding-bottom:2px}
+  .alt-cta a:hover{color:var(--ink)}
+
+  /* ---------- ledger card (signature) ---------- */
+  .ledger{background:var(--paper-3);border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:0 30px 64px -38px rgba(38,32,25,0.4)}
+  .ledger-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
+  .ledger-bar .lbl{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .live{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--valid);letter-spacing:.08em}
+  .live i{width:6px;height:6px;border-radius:50%;background:var(--valid);animation:pulse 1.5s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
+  @media(prefers-reduced-motion:reduce){.live i{animation:none}}
+  #ticker{min-height:280px}
+  .rec{display:grid;grid-template-columns:84px 1fr auto;gap:12px;align-items:center;padding:11px 16px;font-family:"JetBrains Mono",monospace;font-size:12px;border-bottom:1px solid var(--line);animation:slideup .45s cubic-bezier(.16,1,.3,1)}
+  @keyframes slideup{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.rec{animation:none}}
+  .rec .id{color:var(--ink)}
+  .rec .body{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .stamp{font-size:9.5px;letter-spacing:.06em;padding:4px 8px;border-radius:5px;font-weight:600;white-space:nowrap}
+  .stamp.v{color:var(--valid);background:var(--valid-dim);border:1px solid rgba(78,126,90,.3)}
+  .stamp.f{color:var(--flag);background:var(--flag-dim);border:1px solid rgba(168,73,47,.3)}
+
+  /* ---------- proof strip ---------- */
+  .strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper-2)}
+  .strip-in{max-width:var(--maxw);margin:0 auto;padding:22px 28px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:space-between}
+  .strip-in .k{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
+  .pill{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-soft);font-weight:500}
+
+  /* ---------- two-col ---------- */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+  @media(max-width:920px){.two{grid-template-columns:1fr;gap:38px}}
+  .signal-row{display:flex;flex-direction:column;gap:13px;margin-top:26px}
+  .signal-row .ln{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;color:var(--ink)}
+  .signal-row .ln .dot{width:9px;height:9px;border-radius:50%;flex:none;margin-top:6px}
+  .signal-row .ln .dot.v{background:var(--valid);box-shadow:0 0 0 3px var(--valid-dim)}
+  .signal-row .ln .dot.f{background:var(--flag);box-shadow:0 0 0 3px var(--flag-dim)}
+  .signal-row .ln em{font-style:normal;color:var(--muted)}
+
+  .envelope{position:relative;height:340px;background:var(--paper-3);border:1px solid var(--line-2);border-radius:16px;overflow:hidden}
+  .envelope .grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:30px 30px;opacity:.6}
+  .env-box{position:absolute;left:26px;top:30px;width:54%;bottom:30px;border:1.5px dashed rgba(78,126,90,.55);border-radius:13px;background:rgba(78,126,90,.05)}
+  .env-box .cap{position:absolute;top:10px;left:13px;font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;color:var(--valid)}
+  .pt{position:absolute;width:11px;height:11px;border-radius:50%}
+  .pt.v{background:var(--valid);box-shadow:0 0 0 3px var(--valid-dim)}
+  .pt.f{background:var(--flag);box-shadow:0 0 0 3px var(--flag-dim)}
+  .env-note{position:absolute;right:16px;bottom:16px;max-width:148px;text-align:right;font-family:"JetBrains Mono",monospace;font-size:10px;line-height:1.5;color:var(--flag)}
+
+  /* ---------- steps ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:46px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{border:1px solid var(--line);border-radius:13px;padding:24px;background:var(--paper-3);transition:border-color .2s,transform .2s}
+  .step:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .step .no{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--valid);letter-spacing:.1em}
+  .step h3{font-family:"Fraunces",serif;font-size:20px;font-weight:600;letter-spacing:-.01em;margin:13px 0 8px}
+  .step p{font-size:14px;color:var(--muted);margin:0;line-height:1.55}
+  .step code{font-family:"JetBrains Mono",monospace;font-size:12px}
+
+  /* ---------- code ---------- */
+  .codewrap{display:grid;grid-template-columns:.82fr 1.18fr;gap:44px;align-items:center;margin-top:44px}
+  @media(max-width:920px){.codewrap{grid-template-columns:1fr;gap:30px}}
+  .codewrap h3{font-family:"Fraunces",serif;font-size:26px;font-weight:600;letter-spacing:-.01em;margin:0}
+  .codewrap p{font-size:15px;color:var(--muted);line-height:1.6;margin:14px 0 0}
+  .code{background:#221E18;border:1px solid #36302612;border-radius:13px;overflow:hidden;box-shadow:0 24px 54px -34px rgba(38,32,25,0.6)}
+  .code .top{display:flex;align-items:center;gap:7px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,0.08)}
+  .code .top i{width:10px;height:10px;border-radius:50%;background:#4a4338}
+  .code .top span{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:11px;color:#897f6e}
+  pre{margin:0;padding:22px;font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.85;color:#cfc8ba;overflow-x:auto}
+  .c-kw{color:#8fb0e8}.c-fn{color:#8fc4a0}.c-str{color:#d9a877}.c-num{color:#c9a6e0}.c-cm{color:#897f6e}
+
+  /* ---------- record ---------- */
+  .record{margin-top:42px;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;background:var(--paper-3)}
+  .record .head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
+  .record .head .id{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--valid)}
+  .fields{display:grid;grid-template-columns:repeat(3,1fr)}
+  @media(max-width:680px){.fields{grid-template-columns:repeat(2,1fr)}}
+  .f{padding:17px 18px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .f .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;color:var(--faint)}
+  .f .v{font-family:"JetBrains Mono",monospace;font-size:13px;margin-top:6px;color:var(--ink)}
+
+  /* ---------- dashboard ---------- */
+  .panelbox{margin-top:42px;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;background:var(--paper-3)}
+  .panelbox .pbar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
+  .panelbox .pbar .t{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted)}
+  .panelbox .pbar .t b{color:var(--ink);font-weight:600}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
+  @media(max-width:680px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{padding:18px;border-right:1px solid var(--line)}
+  .stat .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.07em;color:var(--faint)}
+  .stat .v{font-family:"JetBrains Mono",monospace;font-size:26px;font-weight:600;margin-top:5px}
+  .stat .v.g{color:var(--valid)}.stat .v.r{color:var(--flag)}
+  .tbl{width:100%;border-collapse:collapse;font-family:"JetBrains Mono",monospace;font-size:12px}
+  .tbl th{text-align:left;padding:11px 16px;font-size:9.5px;letter-spacing:.06em;color:var(--faint);font-weight:500;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.018)}
+  .tbl td{padding:11px 16px;border-bottom:1px solid var(--line);color:var(--muted)}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl td.id{color:var(--valid)}.tbl td.out{color:var(--ink)}
+  .tbl .right{text-align:right}
+  .scrollx{overflow-x:auto}
+
+  /* ---------- audience ---------- */
+  .aud{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:42px}
+  @media(max-width:820px){.aud{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:460px){.aud{grid-template-columns:1fr}}
+  .ac{border:1px solid var(--line);border-radius:12px;padding:22px;background:var(--paper-3)}
+  .ac .ico{font-family:"Fraunces",serif;font-size:18px;color:var(--valid);border:1px solid var(--line-2);width:36px;height:36px;border-radius:9px;display:grid;place-items:center}
+  .ac h4{font-family:"Fraunces",serif;font-size:18px;font-weight:600;margin:14px 0 7px;letter-spacing:-.01em}
+  .ac p{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
+
+  /* ---------- research ---------- */
+  .papers{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:38px}
+  @media(max-width:820px){.papers{grid-template-columns:1fr}}
+  .paper{border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--paper-3);display:flex;gap:15px;align-items:flex-start}
+  .paper .venue{font-family:"JetBrains Mono",monospace;font-size:9.5px;font-weight:600;color:var(--valid);border:1px solid rgba(78,126,90,.3);background:var(--valid-dim);padding:5px 9px;border-radius:6px;white-space:nowrap;flex:none}
+  .paper .ttl{font-family:"Fraunces",serif;font-size:16.5px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+  .paper .sub{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
+
+  /* ---------- faq ---------- */
+  .faq{margin-top:36px;border-top:1px solid var(--line)}
+  .qa{border-bottom:1px solid var(--line)}
+  .qa button{width:100%;background:none;border:none;color:var(--ink);font-family:"Fraunces",serif;font-size:20px;font-weight:600;letter-spacing:-.01em;text-align:left;padding:22px 40px 22px 0;cursor:pointer;position:relative}
+  .qa button::after{content:"+";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-family:"JetBrains Mono",monospace;font-size:20px;color:var(--muted);font-weight:400}
+  .qa.open button::after{content:"\2212";color:var(--valid)}
+  .qa .a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .qa.open .a{max-height:280px}
+  .qa .a p{font-size:15px;color:var(--muted);line-height:1.6;margin:0 0 22px;max-width:660px}
+
+  /* ---------- closing ---------- */
+  .close{border-top:1px solid var(--line);position:relative;overflow:hidden}
+  .close .mark{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);width:560px;max-width:90vw;opacity:.5;mix-blend-mode:luminosity;pointer-events:none;z-index:0}
+  .close-in{max-width:720px;margin:0 auto;padding:108px 28px;text-align:center;position:relative;z-index:1}
+  .close h2{font-size:clamp(34px,5.6vw,58px)}
+  .close .sig{font-style:italic;color:var(--valid)}
+  .close .lede{margin:20px auto 0;text-align:center}
+  .close .access{justify-content:center}
+  .close .sent-msg{text-align:center}
+
+  footer{border-top:1px solid var(--line);background:var(--paper-2);position:relative;z-index:1}
+  .foot-in{max-width:var(--maxw);margin:0 auto;padding:28px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+  .foot-in .brand img{width:26px;height:26px}
+  .foot-in .brand .word{font-size:18px}
+  .foot-in .mono{font-size:11.5px;color:var(--faint);letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="spine" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-in">
+    <a href="#top" class="brand"><img src="inferify_logo.png" alt="Inferify logo"><span class="word">Inferify</span></a>
+    <div class="nav-links">
+      <a href="#problem">The blind spot</a>
+      <a href="#how">How it works</a>
+      <a href="#record">The record</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#research">Research</a>
+    </div>
+    <button class="btn btn-primary" data-access>Request access</button>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">&#8801;</button>
+  </div>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="#problem">The blind spot</a>
+    <a href="#how">How it works</a>
+    <a href="#record">The record</a>
+    <a href="#dashboard">Dashboard</a>
+    <a href="#research">Research</a>
+    <button class="btn btn-primary" data-access>Request access</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="shell">
+    <div class="hero-grid">
+      <div>
+        <span class="tag"><span class="dot" aria-hidden="true"></span>Evidence infrastructure for high-stakes AI</span>
+        <h1 class="h1">Put every model decision <span class="sig">on the record.</span></h1>
+        <p class="lede">Inferify writes a tamper-evident evidence record for every inference your model makes: version, input fingerprint, output, confidence, and whether the model was inside its validated operating regime. When a decision gets questioned six months later, the proof already exists.</p>
+        <form class="access" id="heroAccess">
+          <input type="email" id="heroEmail" placeholder="you@company.com" aria-label="Work email" required>
+          <button type="submit" class="btn btn-primary btn-lg">Request early access</button>
+        </form>
+        <p class="sent-msg" id="heroSent"></p>
+        <div class="alt-cta"><a href="#dashboard">Or explore the live demo dashboard</a></div>
+        <div class="micro">No integration to view the demo. Live data from a fictional radiology model.</div>
+      </div>
+
+      <!-- signature: live evidence ledger -->
+      <div class="ledger" aria-hidden="true">
+        <div class="ledger-bar">
+          <span class="lbl">novadx · inference stream</span>
+          <span class="live"><i></i>LIVE</span>
+        </div>
+        <div id="ticker"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- PROOF STRIP -->
+<div class="strip">
+  <div class="strip-in">
+    <span class="k">Every record carries</span>
+    <span class="pill">model@version</span>
+    <span class="pill">sha256(input)</span>
+    <span class="pill">output + confidence</span>
+    <span class="pill">regime validity</span>
+    <span class="pill">signed timestamp</span>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <div class="two">
+      <div>
+        <span class="eyebrow"><span class="idx">01</span> The blind spot</span>
+        <h2>Your model has a failure mode it cannot see.</h2>
+        <p class="lede">Validation certifies performance inside a fixed operating envelope. The moment an input drifts outside it (a new scanner resolution, a rare presentation, a model version you forgot was still deployed) your dashboards still read green. That gap is where unaccountable decisions live.</p>
+        <div class="signal-row">
+          <div class="ln"><span class="dot v"></span><span><strong>Inside the envelope</strong> &#8594; <span class="mono" style="color:var(--valid)">VALID</span><em>, signed and audit-ready.</em></span></div>
+          <div class="ln"><span class="dot f"></span><span><strong>Outside the envelope</strong> &#8594; <span class="mono" style="color:var(--flag)">FLAGGED</span><em>, with the reason and full trail.</em></span></div>
+        </div>
+      </div>
+      <div class="envelope" aria-hidden="true">
+        <div class="grid"></div>
+        <div class="env-box"><span class="cap">VALIDATED ENVELOPE</span></div>
+        <span class="pt v" style="left:64px;top:108px"></span>
+        <span class="pt v" style="left:132px;top:88px"></span>
+        <span class="pt v" style="left:96px;top:170px"></span>
+        <span class="pt v" style="left:168px;top:200px"></span>
+        <span class="pt v" style="left:200px;top:130px"></span>
+        <span class="pt v" style="left:84px;top:236px"></span>
+        <span class="pt f" style="right:74px;top:96px"></span>
+        <span class="pt f" style="right:42px;top:168px"></span>
+        <span class="pt f" style="right:96px;top:232px"></span>
+        <span class="pt f" style="right:54px;top:120px"></span>
+        <div class="env-note">Invisible to validation.<br>Flagged by Inferify.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how" style="border-top:1px solid var(--line);background:var(--paper-2)">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">02</span> How it works</span>
+    <h2>One line wraps every inference.</h2>
+    <p class="lede">No pipeline rewrites. Wrap your prediction and Inferify fingerprints the input, records the output and confidence, and evaluates the regime signal before the response leaves your service.</p>
+
+    <div class="steps">
+      <div class="step"><div class="no">STEP 01</div><h3>Capture</h3><p>The SDK hashes the input and logs the model version, output, and confidence. A structured record, not a log line you will parse later.</p></div>
+      <div class="step"><div class="no">STEP 02</div><h3>Validate the regime</h3><p>Each inference is checked against the model's validated operating envelope. Inside is <code style="color:var(--valid)">VALID</code>; outside is <code style="color:var(--flag)">FLAGGED</code> with the reason.</p></div>
+      <div class="step"><div class="no">STEP 03</div><h3>Export</h3><p>One click turns the window into a tamper-evident, SHA-256-chained package, built for regulatory submission, audit, and legal discovery.</p></div>
+    </div>
+
+    <div class="codewrap">
+      <div>
+        <h3>Instrument it in an afternoon.</h3>
+        <p>Python or TypeScript. The capture call returns the regime verdict inline, so you can route, hold, or escalate a decision the moment it leaves the model.</p>
+      </div>
+      <div class="code">
+        <div class="top"><i></i><i></i><i></i><span>predict.py</span></div>
+<pre><span class="c-kw">import</span> inferify
+
+verdict = inferify.<span class="c-fn">capture</span>(
+    model=<span class="c-str">"novadx-v2.3.1"</span>,
+    input=xray_512,
+    output={<span class="c-str">"pneumonia"</span>: <span class="c-num">0.87</span>, <span class="c-str">"normal"</span>: <span class="c-num">0.13</span>},
+    confidence=<span class="c-num">0.87</span>,
+)
+<span class="c-kw">if</span> verdict.regime != <span class="c-str">"VALID"</span>:
+    escalate(verdict)   <span class="c-cm"># reason: out_of_distribution</span>
+<span class="c-cm"># record inf_a3f921 · sealed in 24ms</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RECORD -->
+<section id="record">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">03</span> The evidence record</span>
+    <h2>Anatomy of a single decision.</h2>
+    <p class="lede">Not a log entry. A structured, signed artifact you can hand to a regulator, an auditor, or opposing counsel, and that they can verify was never altered.</p>
+
+    <div class="record">
+      <div class="head">
+        <span class="id">inf_a3f921 · evidence record</span>
+        <span class="stamp v">REGIME VALID</span>
+      </div>
+      <div class="fields">
+        <div class="f"><div class="k">MODEL VERSION</div><div class="v">novadx-v2.3.1</div></div>
+        <div class="f"><div class="k">INPUT HASH</div><div class="v">sha256:a3f9c2&#8230;</div></div>
+        <div class="f"><div class="k">CONFIDENCE</div><div class="v">0.91</div></div>
+        <div class="f"><div class="k">INPUT TYPE</div><div class="v">chest_xray_512</div></div>
+        <div class="f"><div class="k">RAW OUTPUT</div><div class="v">pneumonia: 0.91</div></div>
+        <div class="f"><div class="k">TIMESTAMP</div><div class="v">14:42:09 UTC</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section id="dashboard" style="border-top:1px solid var(--line);background:var(--paper-2)">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">04</span> The dashboard</span>
+    <h2>Every inference, accounted for.</h2>
+    <p class="lede">A live ledger of model decisions with their regime verdicts. Illustrative data from a fictional radiology model. The real one runs on your inference stream.</p>
+
+    <div class="panelbox">
+      <div class="pbar">
+        <span class="t"><b>NovaDx</b> &nbsp;/&nbsp; Inference Log</span>
+        <span class="live"><i></i>LIVE</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="k">LOGGED TODAY</div><div class="v">14,902</div></div>
+        <div class="stat"><div class="k">IN WINDOW</div><div class="v">20</div></div>
+        <div class="stat"><div class="k">REGIME VALID</div><div class="v g">15</div></div>
+        <div class="stat"><div class="k">FLAGGED</div><div class="v r">5</div></div>
+      </div>
+      <div class="scrollx">
+        <table class="tbl">
+          <thead><tr><th>INFERENCE ID</th><th>TIME</th><th>MODEL</th><th>OUTPUT</th><th class="right">CONF</th><th class="right">REGIME</th></tr></thead>
+          <tbody id="logBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="micro" style="margin-top:14px">Each row links to its full evidence record: input hash, signed timestamp, and the reason for any flag.</div>
+  </div>
+</section>
+
+<!-- AUDIENCE -->
+<section>
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">05</span> Who it is for</span>
+    <h2>Where a wrong decision has consequences.</h2>
+    <p class="lede">Teams shipping models into workflows where any single decision may later have to be explained, audited, or defended.</p>
+    <div class="aud">
+      <div class="ac"><div class="ico">+</div><h4>Healthcare</h4><p>Diagnostic and triage models facing FDA submission and clinical liability.</p></div>
+      <div class="ac"><div class="ico">$</div><h4>Fintech</h4><p>Credit, fraud, and underwriting decisions under fair-lending and model-risk rules.</p></div>
+      <div class="ac"><div class="ico">&#167;</div><h4>Insurance</h4><p>Claims and pricing models that have to justify each call to a regulator.</p></div>
+      <div class="ac"><div class="ico">&#9671;</div><h4>Enterprise AI</h4><p>Agentic and decision systems where a customer dispute needs a paper trail.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section id="research" style="border-top:1px solid var(--line);background:var(--paper-2)">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">06</span> Grounded in research</span>
+    <h2>The regime signal is not a heuristic.</h2>
+    <p class="lede">Inferify productizes peer-reviewed work on the structural limits of model evaluation: the formal reason whole classes of failure stay invisible to validation.</p>
+    <div class="papers">
+      <div class="paper">
+        <span class="venue">EIML @ ICML 2026</span>
+        <div><div class="ttl">Ontological Closure and Structural Limits on Systemic AI</div><div class="sub">Entire classes of failure are invisible by construction when they fall outside an evaluation framework's bounded space.</div></div>
+      </div>
+      <div class="paper">
+        <span class="venue">PhilML @ ICML 2026</span>
+        <div><div class="ttl">Beyond Accuracy: Epistemic Justification in Trustworthy ML</div><div class="sub">A model can be accurate for the wrong reasons; the gap between predictive success and warranted trust is measurable.</div></div>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:22px;max-width:640px">The regime validity signal is that research, productized into infrastructure.</p>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section>
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">07</span> Questions</span>
+    <h2>The short version.</h2>
+    <div class="faq">
+      <div class="qa">
+        <button>Is this just logging?</button>
+        <div class="a"><p>No. Logs are unstructured and prove nothing about whether a decision should have been trusted. Inferify produces a structured, signed record per inference, with a regime verdict, built to survive an audit or discovery.</p></div>
+      </div>
+      <div class="qa">
+        <button>How much do I have to change?</button>
+        <div class="a"><p>One capture call around your existing prediction. No pipeline rewrite, no model retraining. The SDK runs in-process and the verdict comes back inline, typically in tens of milliseconds.</p></div>
+      </div>
+      <div class="qa">
+        <button>What makes a record tamper-evident?</button>
+        <div class="a"><p>Records are hash-chained, so each one commits to the one before it. Any alteration breaks the chain and is detectable, and the export package is verifiable independently of Inferify.</p></div>
+      </div>
+      <div class="qa">
+        <button>Does my data leave my environment?</button>
+        <div class="a"><p>The record captures an input fingerprint, not the raw input. The design target is teams under strict data-residency and compliance constraints, so the sensitive payload stays where it already lives.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLOSING -->
+<section class="close">
+  <img class="mark" src="inferify_logo.png" alt="" aria-hidden="true">
+  <div class="close-in">
+    <h2>Stop reconstructing what your model did. <span class="sig">Start proving it.</span></h2>
+    <p class="lede">Six months of manual audit reconstruction, replaced by an evidence record that is already written, on every inference.</p>
+    <form class="access" id="closeAccess">
+      <input type="email" id="closeEmail" placeholder="you@company.com" aria-label="Work email" required>
+      <button type="submit" class="btn btn-primary btn-lg">Request early access</button>
+    </form>
+    <p class="sent-msg" id="closeSent"></p>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-in">
+    <a href="#top" class="brand"><img src="inferify_logo.png" alt="Inferify logo"><span class="word">Inferify</span></a>
+    <span class="mono">Evidence infrastructure for high-stakes AI · 2026</span>
+    <span class="mono">Tamper-evident · SHA-256 chained</span>
+  </div>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  /* ----- change this to whichever inbox you actually check ----- */
+  var ACCESS_EMAIL = "founders@inferify.io";
+
+  // mobile menu
+  var mb=document.getElementById('menuBtn'),mm=document.getElementById('mobileMenu');
+  mb.addEventListener('click',function(){var o=mm.classList.toggle('open');mb.setAttribute('aria-expanded',o)});
+  mm.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mm.classList.remove('open');mb.setAttribute('aria-expanded',false)})});
+
+  // faq
+  document.querySelectorAll('.qa button').forEach(function(b){
+    b.addEventListener('click',function(){b.parentElement.classList.toggle('open')});
+  });
+
+  // access forms -> open a prefilled email to the founders
+  function wireForm(formId, inputId, msgId){
+    var form=document.getElementById(formId), input=document.getElementById(inputId), msg=document.getElementById(msgId);
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      var email=(input.value||'').trim();
+      if(email.indexOf('@')<1 || email.indexOf('.')<3){input.focus();return;}
+      var subject=encodeURIComponent('Inferify early access request');
+      var body=encodeURIComponent("I would like early access to Inferify.\n\nWork email: "+email+"\nCompany: \nModel / use case: \n");
+      window.location.href='mailto:'+ACCESS_EMAIL+'?subject='+subject+'&body='+body;
+      form.classList.add('sent');
+      msg.classList.add('show');
+      msg.textContent='Thanks. Your email app is opening a request to '+ACCESS_EMAIL+'. Hit send and we will be in touch.';
+    });
+  }
+  wireForm('heroAccess','heroEmail','heroSent');
+  wireForm('closeAccess','closeEmail','closeSent');
+
+  // nav / menu "Request access" buttons -> jump to the hero form
+  document.querySelectorAll('[data-access]').forEach(function(b){
+    b.addEventListener('click',function(){
+      mm.classList.remove('open');
+      var el=document.getElementById('heroEmail');
+      el.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(function(){el.focus()},420);
+    });
+  });
+
+  // sample data
+  var outs=['pneumonia: 0.91','normal: 0.96','effusion: 0.78','pneumonia: 0.62','nodule: 0.71','normal: 0.88','cardiomegaly: 0.83','pneumonia: 0.55'];
+  function hex(n){var s='';for(var i=0;i<n;i++)s+='0123456789abcdef'[Math.floor(Math.random()*16)];return s}
+  function conf(){return (0.5+Math.random()*0.49).toFixed(2)}
+
+  // hero ticker
+  var ticker=document.getElementById('ticker');
+  var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function makeRec(){
+    var flagged=Math.random()<0.28, c=conf();
+    var d=document.createElement('div');d.className='rec';
+    d.innerHTML='<span class="id">inf_'+hex(6)+'</span>'+
+      '<span class="body">'+outs[Math.floor(Math.random()*outs.length)]+' · conf '+c+'</span>'+
+      '<span class="stamp '+(flagged?'f':'v')+'">'+(flagged?'FLAGGED':'VALID')+'</span>';
+    ticker.insertBefore(d,ticker.firstChild);
+    while(ticker.children.length>8)ticker.removeChild(ticker.lastChild);
+  }
+  for(var i=0;i<7;i++)makeRec();
+  if(!reduce)setInterval(makeRec,2100);
+
+  // dashboard log
+  var body=document.getElementById('logBody');
+  var rows=[
+    ['inf_a3f921','14:42:09','novadx-v2.3.1','pneumonia: 0.91','0.91',true],
+    ['inf_77be0c','14:41:52','novadx-v2.3.1','normal: 0.96','0.96',true],
+    ['inf_2c41da','14:41:38','novadx-v2.2.0','pneumonia: 0.62','0.62',false],
+    ['inf_9f0e3b','14:41:20','novadx-v2.3.1','effusion: 0.78','0.78',true],
+    ['inf_b820a7','14:41:04','novadx-v2.3.1','nodule: 0.55','0.55',false],
+    ['inf_5da612','14:40:47','novadx-v2.3.1','normal: 0.88','0.88',true],
+    ['inf_e31c98','14:40:29','novadx-v2.3.1','cardiomegaly: 0.83','0.83',true],
+    ['inf_0a7f4d','14:40:11','novadx-v2.3.1','pneumonia: 0.58','0.58',false],
+    ['inf_c64b20','14:39:55','novadx-v2.3.1','normal: 0.93','0.93',true],
+    ['inf_18ef73','14:39:38','novadx-v2.3.1','effusion: 0.81','0.81',true]
+  ];
+  rows.forEach(function(r){
+    var tr=document.createElement('tr');
+    var cc=parseFloat(r[4])<0.75?'var(--flag)':'var(--ink)';
+    tr.innerHTML='<td class="id">'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td>'+
+      '<td class="out">'+r[3]+'</td><td class="right" style="color:'+cc+'">'+r[4]+'</td>'+
+      '<td class="right"><span class="stamp '+(r[5]?'v':'f')+'">'+(r[5]?'VALID':'FLAGGED')+'</span></td>';
+    body.appendChild(tr);
+  });
+})();
+</script>
+</body>
+</html>
