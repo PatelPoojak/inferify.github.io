@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inferify</title>
+<title>Inferify · Evidence infrastructure for high-stakes AI</title>
 <meta name="description" content="Inferify writes a tamper-evident evidence record for every inference your model makes: version, input fingerprint, output, confidence, and whether the model was inside its validated operating regime.">
 <link rel="icon" type="image/png" href="inferify_logo.png">
 <link rel="apple-touch-icon" href="inferify_logo.png">
@@ -12,60 +12,37 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,600&family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --paper:#EAE4DA;
-    --paper-2:#F2ECE2;
-    --paper-3:#FAF6EE;
-    --ink:#262019;
-    --ink-soft:#3C352B;
-    --muted:#6F6657;
-    --faint:#9C927E;
-    --line:rgba(38,32,25,0.12);
-    --line-2:rgba(38,32,25,0.22);
-    --valid:#4E7E5A;
-    --valid-dim:rgba(78,126,90,0.12);
-    --flag:#A8492F;
-    --flag-dim:rgba(168,73,47,0.11);
-    --maxw:1140px;
-    --gutter:104px;
+    --paper:#EAE4DA;--paper-2:#F2ECE2;--paper-3:#FAF6EE;
+    --ink:#262019;--ink-soft:#3C352B;--muted:#6F6657;--faint:#9C927E;
+    --line:rgba(38,32,25,0.12);--line-2:rgba(38,32,25,0.22);
+    --valid:#4E7E5A;--valid-dim:rgba(78,126,90,0.12);
+    --flag:#A8492F;--flag-dim:rgba(168,73,47,0.11);
+    --maxw:1140px;--gutter:104px;
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-  body{
-    margin:0;background:var(--paper);color:var(--ink);
-    font-family:"Archivo",system-ui,sans-serif;
-    -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
-  }
-  /* paper grain + faint warm wash */
-  body::before{
-    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6;
-    background:radial-gradient(120% 80% at 50% -10%, rgba(78,126,90,0.05), transparent 55%);
-  }
-  body::after{
-    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;mix-blend-mode:multiply;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Archivo",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6;background:radial-gradient(120% 80% at 50% -10%, rgba(78,126,90,0.05), transparent 55%)}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
   .wrap{position:relative;z-index:1}
   a{color:inherit;text-decoration:none}
   ::selection{background:var(--valid);color:var(--paper-3)}
   :focus-visible{outline:2px solid var(--valid);outline-offset:3px;border-radius:3px}
-
   .shell{max-width:var(--maxw);margin:0 auto;padding:0 28px}
   .spine{position:absolute;left:calc((100vw - var(--maxw))/2 + 28px);top:0;bottom:0;width:1px;background:var(--line);z-index:1}
   @media(max-width:1080px){.spine{display:none}}
-
   .serif{font-family:"Fraunces",Georgia,serif}
   .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 
-  /* ---------- nav ---------- */
-  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);
-    background:rgba(234,228,218,0.78);border-bottom:1px solid var(--line)}
+  /* nav */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(234,228,218,0.8);border-bottom:1px solid var(--line)}
   .nav-in{max-width:var(--maxw);margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
   .brand{display:flex;align-items:center;gap:10px}
   .brand img{width:30px;height:30px;object-fit:cover;border-radius:7px;border:1px solid var(--line);flex:none}
   .brand .word{font-family:"Fraunces",serif;font-weight:600;font-size:21px;letter-spacing:-.01em}
-  .nav-links{display:flex;align-items:center;gap:4px}
-  .nav-links a{font-size:13.5px;color:var(--muted);padding:8px 12px;border-radius:7px;transition:color .15s,background .15s}
+  .nav-links{display:flex;align-items:center;gap:2px}
+  .nav-links a{font-size:13.5px;color:var(--muted);padding:8px 11px;border-radius:7px;transition:color .15s,background .15s}
   .nav-links a:hover{color:var(--ink);background:rgba(38,32,25,0.045)}
   .btn{font-family:"Archivo",sans-serif;font-size:14px;font-weight:600;cursor:pointer;border-radius:9px;border:1px solid transparent;transition:transform .12s,background .15s,border-color .15s,color .15s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
   .btn:active{transform:translateY(1px)}
@@ -75,25 +52,25 @@
   .btn-ghost:hover{border-color:var(--ink)}
   .btn-lg{padding:13px 22px;font-size:15px;border-radius:10px}
   .menu-btn{display:none;background:none;border:1px solid var(--line-2);color:var(--ink);width:40px;height:40px;border-radius:9px;cursor:pointer;font-size:18px}
-  @media(max-width:840px){.nav-links,.nav-in .btn-primary{display:none}.menu-btn{display:inline-flex;align-items:center;justify-content:center}}
+  @media(max-width:900px){.nav-links,.nav-in .btn-primary{display:none}.menu-btn{display:inline-flex;align-items:center;justify-content:center}}
   .mobile-menu{display:none;border-bottom:1px solid var(--line);background:var(--paper);padding:10px 28px 18px}
   .mobile-menu.open{display:block}
   .mobile-menu a{display:block;padding:12px 4px;color:var(--muted);border-bottom:1px solid var(--line);font-size:15px}
   .mobile-menu .btn-primary{display:flex;justify-content:center;margin-top:14px;width:100%}
 
-  /* ---------- section scaffolding ---------- */
-  section{position:relative;padding:94px 0}
+  section{position:relative;padding:90px 0}
   .node{position:absolute;left:calc((100vw - var(--maxw))/2 + 28px);width:10px;height:10px;border-radius:50%;background:var(--paper);border:1px solid var(--line-2);margin-left:-5px;margin-top:6px;z-index:2}
   .node::after{content:"";position:absolute;inset:2px;border-radius:50%;background:var(--faint)}
   @media(max-width:1080px){.node{display:none}}
   .eyebrow{font-family:"JetBrains Mono",monospace;font-size:11.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:10px}
   .eyebrow .idx{color:var(--valid)}
   h2{font-family:"Fraunces",serif;font-size:clamp(30px,4.6vw,48px);line-height:1.02;letter-spacing:-.018em;font-weight:600;margin:16px 0 0;text-wrap:balance}
-  .lede{font-size:17px;line-height:1.62;color:var(--muted);max-width:560px;margin:18px 0 0;text-wrap:pretty}
+  .lede{font-size:17px;line-height:1.62;color:var(--muted);max-width:580px;margin:18px 0 0;text-wrap:pretty}
   .pad-l{padding-left:var(--gutter)}
   @media(max-width:1080px){.pad-l{padding-left:0}}
+  .alt{border-top:1px solid var(--line);background:var(--paper-2)}
 
-  /* ---------- hero ---------- */
+  /* hero */
   .hero{padding:74px 0 58px;border-bottom:1px solid var(--line)}
   .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
   @media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:40px}}
@@ -101,48 +78,50 @@
   .h1 .sig{font-style:italic;color:var(--valid)}
   .hero p.lede{max-width:540px;font-size:18px}
   .micro{margin-top:16px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--faint);letter-spacing:.02em}
-
-  .tag{display:inline-flex;align-items:center;gap:9px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);
-    border:1px solid var(--line-2);padding:7px 13px;border-radius:100px;background:var(--paper-2)}
+  .tag{display:inline-flex;align-items:center;gap:9px;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);border:1px solid var(--line-2);padding:7px 13px;border-radius:100px;background:var(--paper-2)}
   .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--valid);box-shadow:0 0 0 3px var(--valid-dim)}
 
-  /* ---------- access form ---------- */
+  /* access form */
   .access{display:flex;gap:10px;margin-top:30px;flex-wrap:wrap}
   .access input{font-family:"Archivo",sans-serif;font-size:15px;color:var(--ink);background:var(--paper-3);border:1px solid var(--line-2);border-radius:10px;padding:13px 16px;min-width:230px;flex:1}
   .access input::placeholder{color:var(--faint)}
   .access input:focus{outline:none;border-color:var(--valid)}
   .access.sent input,.access.sent button{display:none}
   .sent-msg{display:none;font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--valid);margin-top:30px;line-height:1.5}
-  .access.sent + .sent-msg,.sent-msg.show{display:block}
+  .sent-msg.show{display:block}
   .alt-cta{margin-top:14px}
   .alt-cta a{font-size:14px;color:var(--muted);border-bottom:1px solid var(--line-2);padding-bottom:2px}
   .alt-cta a:hover{color:var(--ink)}
 
-  /* ---------- ledger card (signature) ---------- */
-  .ledger{background:var(--paper-3);border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:0 30px 64px -38px rgba(38,32,25,0.4)}
-  .ledger-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
-  .ledger-bar .lbl{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:.04em}
+  /* hero capture card (single decision, the mechanism) */
+  .capture{background:var(--paper-3);border:1px solid var(--line-2);border-radius:14px;overflow:hidden;box-shadow:0 30px 64px -38px rgba(38,32,25,0.4)}
+  .cap-bar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
+  .cap-bar .lbl{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--muted);letter-spacing:.04em}
   .live{display:inline-flex;align-items:center;gap:6px;font-family:"JetBrains Mono",monospace;font-size:10.5px;color:var(--valid);letter-spacing:.08em}
   .live i{width:6px;height:6px;border-radius:50%;background:var(--valid);animation:pulse 1.5s ease-in-out infinite}
   @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.7)}}
   @media(prefers-reduced-motion:reduce){.live i{animation:none}}
-  #ticker{min-height:280px}
-  .rec{display:grid;grid-template-columns:84px 1fr auto;gap:12px;align-items:center;padding:11px 16px;font-family:"JetBrains Mono",monospace;font-size:12px;border-bottom:1px solid var(--line);animation:slideup .45s cubic-bezier(.16,1,.3,1)}
-  @keyframes slideup{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
-  @media(prefers-reduced-motion:reduce){.rec{animation:none}}
-  .rec .id{color:var(--ink)}
-  .rec .body{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .stamp{font-size:9.5px;letter-spacing:.06em;padding:4px 8px;border-radius:5px;font-weight:600;white-space:nowrap}
-  .stamp.v{color:var(--valid);background:var(--valid-dim);border:1px solid rgba(78,126,90,.3)}
-  .stamp.f{color:var(--flag);background:var(--flag-dim);border:1px solid rgba(168,73,47,.3)}
+  .cap-body{padding:20px 18px 22px;font-family:"JetBrains Mono",monospace}
+  .cap-step{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:10px;padding:7px 0;opacity:.25;transition:opacity .35s}
+  .cap-step.on{opacity:1}
+  .cap-step .arrow{color:var(--valid)}
+  .cap-step .v{color:var(--ink)}
+  .cap-divider{height:1px;background:var(--line);margin:14px 0}
+  .cap-verdict{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:58px}
+  .cap-verdict .stamp-lg{font-size:13px;letter-spacing:.08em;font-weight:600;padding:11px 16px;border-radius:9px;opacity:0;transform:scale(.96);transition:opacity .3s,transform .3s}
+  .cap-verdict .stamp-lg.show{opacity:1;transform:none}
+  .stamp-lg.v{color:var(--valid);background:var(--valid-dim);border:1px solid rgba(78,126,90,.32)}
+  .stamp-lg.f{color:var(--flag);background:var(--flag-dim);border:1px solid rgba(168,73,47,.32)}
+  .cap-seal{font-size:10.5px;color:var(--faint);opacity:0;transition:opacity .3s}
+  .cap-seal.show{opacity:1}
 
-  /* ---------- proof strip ---------- */
+  /* proof strip */
   .strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper-2)}
-  .strip-in{max-width:var(--maxw);margin:0 auto;padding:22px 28px;display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:space-between}
+  .strip-in{max-width:var(--maxw);margin:0 auto;padding:22px 28px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;justify-content:space-between}
   .strip-in .k{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--faint);letter-spacing:.1em;text-transform:uppercase}
   .pill{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-soft);font-weight:500}
 
-  /* ---------- two-col ---------- */
+  /* two col */
   .two{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
   @media(max-width:920px){.two{grid-template-columns:1fr;gap:38px}}
   .signal-row{display:flex;flex-direction:column;gap:13px;margin-top:26px}
@@ -151,7 +130,6 @@
   .signal-row .ln .dot.v{background:var(--valid);box-shadow:0 0 0 3px var(--valid-dim)}
   .signal-row .ln .dot.f{background:var(--flag);box-shadow:0 0 0 3px var(--flag-dim)}
   .signal-row .ln em{font-style:normal;color:var(--muted)}
-
   .envelope{position:relative;height:340px;background:var(--paper-3);border:1px solid var(--line-2);border-radius:16px;overflow:hidden}
   .envelope .grid{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:30px 30px;opacity:.6}
   .env-box{position:absolute;left:26px;top:30px;width:54%;bottom:30px;border:1.5px dashed rgba(78,126,90,.55);border-radius:13px;background:rgba(78,126,90,.05)}
@@ -161,7 +139,16 @@
   .pt.f{background:var(--flag);box-shadow:0 0 0 3px var(--flag-dim)}
   .env-note{position:absolute;right:16px;bottom:16px;max-width:148px;text-align:right;font-family:"JetBrains Mono",monospace;font-size:10px;line-height:1.5;color:var(--flag)}
 
-  /* ---------- steps ---------- */
+  /* why now cards */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:44px}
+  @media(max-width:820px){.grid3{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:13px;padding:24px;background:var(--paper-3);transition:border-color .2s,transform .2s}
+  .card:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .card .no{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--valid);letter-spacing:.1em}
+  .card h3{font-family:"Fraunces",serif;font-size:20px;font-weight:600;letter-spacing:-.01em;margin:13px 0 8px}
+  .card p{font-size:14px;color:var(--muted);margin:0;line-height:1.56}
+
+  /* steps + code */
   .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:46px}
   @media(max-width:820px){.steps{grid-template-columns:1fr}}
   .step{border:1px solid var(--line);border-radius:13px;padding:24px;background:var(--paper-3);transition:border-color .2s,transform .2s}
@@ -170,20 +157,18 @@
   .step h3{font-family:"Fraunces",serif;font-size:20px;font-weight:600;letter-spacing:-.01em;margin:13px 0 8px}
   .step p{font-size:14px;color:var(--muted);margin:0;line-height:1.55}
   .step code{font-family:"JetBrains Mono",monospace;font-size:12px}
-
-  /* ---------- code ---------- */
   .codewrap{display:grid;grid-template-columns:.82fr 1.18fr;gap:44px;align-items:center;margin-top:44px}
   @media(max-width:920px){.codewrap{grid-template-columns:1fr;gap:30px}}
   .codewrap h3{font-family:"Fraunces",serif;font-size:26px;font-weight:600;letter-spacing:-.01em;margin:0}
   .codewrap p{font-size:15px;color:var(--muted);line-height:1.6;margin:14px 0 0}
-  .code{background:#221E18;border:1px solid #36302612;border-radius:13px;overflow:hidden;box-shadow:0 24px 54px -34px rgba(38,32,25,0.6)}
+  .code{background:#221E18;border-radius:13px;overflow:hidden;box-shadow:0 24px 54px -34px rgba(38,32,25,0.6)}
   .code .top{display:flex;align-items:center;gap:7px;padding:12px 15px;border-bottom:1px solid rgba(255,255,255,0.08)}
   .code .top i{width:10px;height:10px;border-radius:50%;background:#4a4338}
   .code .top span{margin-left:8px;font-family:"JetBrains Mono",monospace;font-size:11px;color:#897f6e}
   pre{margin:0;padding:22px;font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:1.85;color:#cfc8ba;overflow-x:auto}
   .c-kw{color:#8fb0e8}.c-fn{color:#8fc4a0}.c-str{color:#d9a877}.c-num{color:#c9a6e0}.c-cm{color:#897f6e}
 
-  /* ---------- record ---------- */
+  /* record */
   .record{margin-top:42px;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;background:var(--paper-3)}
   .record .head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
   .record .head .id{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--valid)}
@@ -193,7 +178,20 @@
   .f .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;color:var(--faint)}
   .f .v{font-family:"JetBrains Mono",monospace;font-size:13px;margin-top:6px;color:var(--ink)}
 
-  /* ---------- dashboard ---------- */
+  /* architecture */
+  .arch{margin-top:44px;border:1px solid var(--line-2);border-radius:16px;background:var(--paper-3);padding:30px 26px;overflow:hidden}
+  .arch-flow{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch}
+  @media(max-width:820px){.arch-flow{grid-template-columns:1fr}}
+  .anode{position:relative;border:1px solid var(--line-2);border-radius:12px;padding:18px;background:var(--paper-2)}
+  .anode .tg{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.08em;color:var(--valid)}
+  .anode h4{font-family:"Fraunces",serif;font-size:17px;font-weight:600;margin:9px 0 6px;letter-spacing:-.01em}
+  .anode p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.5}
+  .anode::after{content:"\2192";position:absolute;right:-13px;top:50%;transform:translateY(-50%);font-family:"JetBrains Mono",monospace;color:var(--faint);z-index:3}
+  .arch-flow .anode:last-child::after{display:none}
+  @media(max-width:820px){.anode::after{content:"\2193";right:50%;top:auto;bottom:-15px;transform:translateX(50%)}}
+  .arch-note{margin-top:20px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--faint);text-align:center;line-height:1.6}
+
+  /* dashboard */
   .panelbox{margin-top:42px;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;background:var(--paper-3)}
   .panelbox .pbar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.025)}
   .panelbox .pbar .t{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted)}
@@ -204,15 +202,38 @@
   .stat .k{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.07em;color:var(--faint)}
   .stat .v{font-family:"JetBrains Mono",monospace;font-size:26px;font-weight:600;margin-top:5px}
   .stat .v.g{color:var(--valid)}.stat .v.r{color:var(--flag)}
+  .reasons{padding:18px;border-bottom:1px solid var(--line)}
+  .reasons .rt{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.07em;color:var(--faint);margin-bottom:14px}
+  .rbar{display:grid;grid-template-columns:210px 1fr 28px;gap:12px;align-items:center;margin-bottom:9px;font-family:"JetBrains Mono",monospace;font-size:11.5px;color:var(--muted)}
+  @media(max-width:560px){.rbar{grid-template-columns:140px 1fr 24px}}
+  .rbar .track{height:7px;border-radius:4px;background:rgba(38,32,25,0.07);overflow:hidden}
+  .rbar .fill{height:100%;background:var(--flag);opacity:.65;border-radius:4px}
+  .rbar .n{text-align:right;color:var(--flag)}
   .tbl{width:100%;border-collapse:collapse;font-family:"JetBrains Mono",monospace;font-size:12px}
   .tbl th{text-align:left;padding:11px 16px;font-size:9.5px;letter-spacing:.06em;color:var(--faint);font-weight:500;border-bottom:1px solid var(--line);background:rgba(38,32,25,0.018)}
-  .tbl td{padding:11px 16px;border-bottom:1px solid var(--line);color:var(--muted)}
+  .tbl td{padding:11px 16px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:middle}
   .tbl tr:last-child td{border-bottom:none}
   .tbl td.id{color:var(--valid)}.tbl td.out{color:var(--ink)}
   .tbl .right{text-align:right}
   .scrollx{overflow-x:auto}
+  /* the bleed fix: inline-block so the badge background stays inside its own box */
+  .stamp{display:inline-block;line-height:1.35;font-size:9.5px;letter-spacing:.06em;padding:4px 8px;border-radius:5px;font-weight:600;white-space:nowrap;vertical-align:middle}
+  .stamp.v{color:var(--valid);background:var(--valid-dim);border:1px solid rgba(78,126,90,.3)}
+  .stamp.f{color:var(--flag);background:var(--flag-dim);border:1px solid rgba(168,73,47,.3)}
 
-  /* ---------- audience ---------- */
+  /* scenarios */
+  .scn{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:44px}
+  @media(max-width:820px){.scn{grid-template-columns:1fr}}
+  .scenario{border:1px solid var(--line);border-radius:13px;padding:24px;background:var(--paper-3)}
+  .scenario .q{font-family:"Fraunces",serif;font-size:18.5px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
+  .scenario .split{margin-top:16px;display:flex;flex-direction:column;gap:9px}
+  .scenario .row{display:flex;gap:10px;align-items:flex-start;font-family:"JetBrains Mono",monospace;font-size:12px;line-height:1.5}
+  .scenario .row .tag2{flex:none;font-size:9px;letter-spacing:.06em;padding:3px 7px;border-radius:4px;margin-top:1px}
+  .scenario .row.bad .tag2{color:var(--flag);background:var(--flag-dim)}
+  .scenario .row.good .tag2{color:var(--valid);background:var(--valid-dim)}
+  .scenario .row span{color:var(--muted)}
+
+  /* audience */
   .aud{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:42px}
   @media(max-width:820px){.aud{grid-template-columns:repeat(2,1fr)}}
   @media(max-width:460px){.aud{grid-template-columns:1fr}}
@@ -221,7 +242,29 @@
   .ac h4{font-family:"Fraunces",serif;font-size:18px;font-weight:600;margin:14px 0 7px;letter-spacing:-.01em}
   .ac p{font-size:13px;color:var(--muted);margin:0;line-height:1.5}
 
-  /* ---------- research ---------- */
+  /* comparison */
+  .cmp{margin-top:44px;border:1px solid var(--line-2);border-radius:14px;overflow:hidden;background:var(--paper-3)}
+  .cmp-scroll{overflow-x:auto}
+  .cmp table{width:100%;border-collapse:collapse;min-width:680px}
+  .cmp th,.cmp td{padding:15px 16px;text-align:left;border-bottom:1px solid var(--line);font-size:13px}
+  .cmp thead th{font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.06em;color:var(--faint);font-weight:500;text-transform:uppercase;vertical-align:bottom}
+  .cmp tbody td:first-child{color:var(--ink);font-weight:500}
+  .cmp td{color:var(--muted);font-family:"JetBrains Mono",monospace}
+  .cmp .us{background:rgba(78,126,90,0.06);border-left:1px solid rgba(78,126,90,.25);border-right:1px solid rgba(78,126,90,.25)}
+  .cmp thead .us{color:var(--valid)}
+  .cmp .yes{color:var(--valid)}.cmp .no{color:var(--faint)}.cmp .part{color:var(--flag)}
+  .cmp tr:last-child td{border-bottom:none}
+  .cmp-foot{padding:16px 18px;font-size:13px;color:var(--muted);line-height:1.55;border-top:1px solid var(--line);background:rgba(38,32,25,0.02)}
+
+  /* security */
+  .sec{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:44px}
+  @media(max-width:680px){.sec{grid-template-columns:1fr}}
+  .seci{border:1px solid var(--line);border-radius:12px;padding:22px;background:var(--paper-3);display:flex;gap:14px;align-items:flex-start}
+  .seci .mk{font-family:"JetBrains Mono",monospace;color:var(--valid);font-size:13px;border:1px solid var(--line-2);border-radius:7px;width:30px;height:30px;display:grid;place-items:center;flex:none}
+  .seci h4{font-family:"Fraunces",serif;font-size:17px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+  .seci p{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
+
+  /* research */
   .papers{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:38px}
   @media(max-width:820px){.papers{grid-template-columns:1fr}}
   .paper{border:1px solid var(--line);border-radius:12px;padding:20px;background:var(--paper-3);display:flex;gap:15px;align-items:flex-start}
@@ -229,25 +272,56 @@
   .paper .ttl{font-family:"Fraunces",serif;font-size:16.5px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
   .paper .sub{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.45}
 
-  /* ---------- faq ---------- */
+  /* team */
+  .team{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:44px}
+  @media(max-width:820px){.team{grid-template-columns:1fr}}
+  .member{border:1px solid var(--line-2);border-radius:14px;padding:26px;background:var(--paper-3)}
+  .member .nm{font-family:"Fraunces",serif;font-size:23px;font-weight:600;letter-spacing:-.01em}
+  .member .rl{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--valid);text-transform:uppercase;margin-top:5px}
+  .member ul{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+  .member li{display:flex;gap:11px;align-items:flex-start;font-size:13.5px;color:var(--ink-soft);line-height:1.45}
+  .member li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--valid);flex:none;margin-top:7px;box-shadow:0 0 0 3px var(--valid-dim)}
+  .team-line{margin-top:30px;font-family:"Fraunces",serif;font-style:italic;font-size:clamp(20px,2.6vw,26px);line-height:1.35;color:var(--ink);max-width:760px;letter-spacing:-.01em}
+  .team-line span{color:var(--valid)}
+
+  /* roadmap */
+  .road{margin-top:44px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.road{grid-template-columns:1fr}}
+  .phase{border:1px solid var(--line);border-radius:13px;padding:24px;background:var(--paper-3);position:relative}
+  .phase.now{border-color:rgba(78,126,90,.4);background:rgba(78,126,90,.05)}
+  .phase .ph{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--valid)}
+  .phase h4{font-family:"Fraunces",serif;font-size:19px;font-weight:600;margin:9px 0 14px;letter-spacing:-.01em}
+  .phase ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .phase li{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--muted);line-height:1.45;display:flex;gap:9px;align-items:flex-start}
+  .phase li::before{content:"\2192";color:var(--faint);flex:none}
+  .phase.now li::before{content:"\2713";color:var(--valid)}
+
+  /* traction */
+  .trac{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:44px}
+  @media(max-width:680px){.trac{grid-template-columns:repeat(2,1fr)}}
+  .tr{border:1px solid var(--line);border-radius:12px;padding:22px;background:var(--paper-3)}
+  .tr .v{font-family:"Fraunces",serif;font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .tr .k{font-size:12.5px;color:var(--muted);margin-top:9px;line-height:1.4}
+
+  /* faq */
   .faq{margin-top:36px;border-top:1px solid var(--line)}
   .qa{border-bottom:1px solid var(--line)}
   .qa button{width:100%;background:none;border:none;color:var(--ink);font-family:"Fraunces",serif;font-size:20px;font-weight:600;letter-spacing:-.01em;text-align:left;padding:22px 40px 22px 0;cursor:pointer;position:relative}
   .qa button::after{content:"+";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-family:"JetBrains Mono",monospace;font-size:20px;color:var(--muted);font-weight:400}
   .qa.open button::after{content:"\2212";color:var(--valid)}
   .qa .a{max-height:0;overflow:hidden;transition:max-height .3s ease}
-  .qa.open .a{max-height:280px}
-  .qa .a p{font-size:15px;color:var(--muted);line-height:1.6;margin:0 0 22px;max-width:660px}
+  .qa.open .a{max-height:320px}
+  .qa .a p{font-size:15px;color:var(--muted);line-height:1.6;margin:0 0 22px;max-width:680px}
 
-  /* ---------- closing ---------- */
+  /* closing */
   .close{border-top:1px solid var(--line);position:relative;overflow:hidden}
   .close .mark{position:absolute;left:50%;top:50%;transform:translate(-50%,-52%);width:560px;max-width:90vw;opacity:.5;mix-blend-mode:luminosity;pointer-events:none;z-index:0}
-  .close-in{max-width:720px;margin:0 auto;padding:108px 28px;text-align:center;position:relative;z-index:1}
+  .close-in{max-width:720px;margin:0 auto;padding:104px 28px;text-align:center;position:relative;z-index:1}
   .close h2{font-size:clamp(34px,5.6vw,58px)}
   .close .sig{font-style:italic;color:var(--valid)}
   .close .lede{margin:20px auto 0;text-align:center}
   .close .access{justify-content:center}
-  .close .sent-msg{text-align:center}
+  .close .sent-msg{text-align:center;margin-left:auto;margin-right:auto}
 
   footer{border-top:1px solid var(--line);background:var(--paper-2);position:relative;z-index:1}
   .foot-in{max-width:var(--maxw);margin:0 auto;padding:28px 28px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
@@ -267,9 +341,10 @@
     <div class="nav-links">
       <a href="#problem">The blind spot</a>
       <a href="#how">How it works</a>
-      <a href="#record">The record</a>
       <a href="#dashboard">Dashboard</a>
+      <a href="#compare">Why us</a>
       <a href="#research">Research</a>
+      <a href="#team">Team</a>
     </div>
     <button class="btn btn-primary" data-access>Request access</button>
     <button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">&#8801;</button>
@@ -277,9 +352,10 @@
   <div class="mobile-menu" id="mobileMenu">
     <a href="#problem">The blind spot</a>
     <a href="#how">How it works</a>
-    <a href="#record">The record</a>
     <a href="#dashboard">Dashboard</a>
+    <a href="#compare">Why us</a>
     <a href="#research">Research</a>
+    <a href="#team">Team</a>
     <button class="btn btn-primary" data-access>Request access</button>
   </div>
 </nav>
@@ -301,13 +377,23 @@
         <div class="micro">No integration to view the demo. Live data from a fictional radiology model.</div>
       </div>
 
-      <!-- signature: live evidence ledger -->
-      <div class="ledger" aria-hidden="true">
-        <div class="ledger-bar">
-          <span class="lbl">novadx · inference stream</span>
-          <span class="live"><i></i>LIVE</span>
+      <!-- signature: one decision being captured and sealed (the mechanism) -->
+      <div class="capture" aria-hidden="true">
+        <div class="cap-bar">
+          <span class="lbl">inferify.capture()</span>
+          <span class="live"><i></i>SEALING</span>
         </div>
-        <div id="ticker"></div>
+        <div class="cap-body">
+          <div class="cap-step" data-s="0"><span class="arrow">&#8594;</span> input&nbsp;&nbsp;<span class="v" id="capHash">sha256:&#8230;</span></div>
+          <div class="cap-step" data-s="1"><span class="arrow">&#8594;</span> model&nbsp;&nbsp;<span class="v">novadx-v2.3.1</span></div>
+          <div class="cap-step" data-s="2"><span class="arrow">&#8594;</span> output&nbsp;&nbsp;<span class="v" id="capOut">pneumonia: 0.91</span></div>
+          <div class="cap-step" data-s="3"><span class="arrow">&#8594;</span> regime&nbsp;&nbsp;<span class="v" id="capReg">checking envelope&#8230;</span></div>
+          <div class="cap-divider"></div>
+          <div class="cap-verdict">
+            <span class="stamp-lg v" id="capStamp">REGIME VALID</span>
+            <span class="cap-seal" id="capSeal">record inf_a3f921 · sealed in 24ms</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -358,20 +444,33 @@
   </div>
 </section>
 
-<!-- HOW -->
-<section id="how" style="border-top:1px solid var(--line);background:var(--paper-2)">
+<!-- WHY NOW -->
+<section class="alt">
   <span class="node" aria-hidden="true"></span>
   <div class="shell pad-l">
-    <span class="eyebrow"><span class="idx">02</span> How it works</span>
+    <span class="eyebrow"><span class="idx">02</span> Why now</span>
+    <h2>Accountability is becoming a requirement, not a nicety.</h2>
+    <p class="lede">AI is moving into decisions that get audited, disputed, and litigated. The regulatory frameworks now forming around high-stakes AI share one demand: show what the model did, and show it was operating as intended. Today that record is reconstructed by hand, months later, from scattered logs. That window is the opportunity.</p>
+    <div class="grid3">
+      <div class="card"><div class="no">FORCE 01</div><h3>Regulation is arriving</h3><p>Record-keeping and traceability obligations for high-risk AI in the EU, documentation expectations for AI and ML medical devices, model-risk governance in finance, and the push toward measurable, documented AI under emerging US frameworks.</p></div>
+      <div class="card"><div class="no">FORCE 02</div><h3>The stakes moved up</h3><p>Models now decide diagnoses, credit, claims, and autonomous actions. When a single decision can be challenged, aggregate accuracy is not a defense. The individual decision has to be explainable on its own terms.</p></div>
+      <div class="card"><div class="no">FORCE 03</div><h3>Disputes follow deployment</h3><p>Audits, lawsuits, and customer challenges arrive after the fact. The evidence has to already exist at the moment of the decision. You cannot manufacture a trustworthy record once the question is already being asked.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">03</span> How it works</span>
     <h2>One line wraps every inference.</h2>
     <p class="lede">No pipeline rewrites. Wrap your prediction and Inferify fingerprints the input, records the output and confidence, and evaluates the regime signal before the response leaves your service.</p>
-
     <div class="steps">
       <div class="step"><div class="no">STEP 01</div><h3>Capture</h3><p>The SDK hashes the input and logs the model version, output, and confidence. A structured record, not a log line you will parse later.</p></div>
       <div class="step"><div class="no">STEP 02</div><h3>Validate the regime</h3><p>Each inference is checked against the model's validated operating envelope. Inside is <code style="color:var(--valid)">VALID</code>; outside is <code style="color:var(--flag)">FLAGGED</code> with the reason.</p></div>
       <div class="step"><div class="no">STEP 03</div><h3>Export</h3><p>One click turns the window into a tamper-evident, SHA-256-chained package, built for regulatory submission, audit, and legal discovery.</p></div>
     </div>
-
     <div class="codewrap">
       <div>
         <h3>Instrument it in an afternoon.</h3>
@@ -396,13 +495,12 @@ verdict = inferify.<span class="c-fn">capture</span>(
 </section>
 
 <!-- RECORD -->
-<section id="record">
+<section class="alt" id="record">
   <span class="node" aria-hidden="true"></span>
   <div class="shell pad-l">
-    <span class="eyebrow"><span class="idx">03</span> The evidence record</span>
+    <span class="eyebrow"><span class="idx">04</span> The evidence record</span>
     <h2>Anatomy of a single decision.</h2>
     <p class="lede">Not a log entry. A structured, signed artifact you can hand to a regulator, an auditor, or opposing counsel, and that they can verify was never altered.</p>
-
     <div class="record">
       <div class="head">
         <span class="id">inf_a3f921 · evidence record</span>
@@ -417,17 +515,27 @@ verdict = inferify.<span class="c-fn">capture</span>(
         <div class="f"><div class="k">TIMESTAMP</div><div class="v">14:42:09 UTC</div></div>
       </div>
     </div>
+
+    <!-- architecture -->
+    <div class="arch" aria-label="architecture">
+      <div class="arch-flow">
+        <div class="anode"><div class="tg">01 IN PROCESS</div><h4>Your model</h4><p>The capture call wraps your existing prediction. The SDK runs inside your service, in your environment.</p></div>
+        <div class="anode"><div class="tg">02 EVALUATE</div><h4>Fingerprint + verdict</h4><p>Input is hashed, the regime is checked against the validated envelope, and a verdict is returned inline.</p></div>
+        <div class="anode"><div class="tg">03 SEAL</div><h4>Hash-chained store</h4><p>Each record commits to the one before it. Any later alteration breaks the chain and is detectable.</p></div>
+        <div class="anode"><div class="tg">04 PROVE</div><h4>Export package</h4><p>Any time window exports as a signed, independently verifiable evidence package.</p></div>
+      </div>
+      <div class="arch-note">Raw inputs never have to leave your environment. The record carries a fingerprint, not the payload.</div>
+    </div>
   </div>
 </section>
 
 <!-- DASHBOARD -->
-<section id="dashboard" style="border-top:1px solid var(--line);background:var(--paper-2)">
+<section id="dashboard">
   <span class="node" aria-hidden="true"></span>
   <div class="shell pad-l">
-    <span class="eyebrow"><span class="idx">04</span> The dashboard</span>
+    <span class="eyebrow"><span class="idx">05</span> The dashboard</span>
     <h2>Every inference, accounted for.</h2>
-    <p class="lede">A live ledger of model decisions with their regime verdicts. Illustrative data from a fictional radiology model. The real one runs on your inference stream.</p>
-
+    <p class="lede">The aggregate ledger: live model decisions, their regime verdicts, and exactly why anything was flagged. Illustrative data from a fictional radiology model. The real one runs on your inference stream.</p>
     <div class="panelbox">
       <div class="pbar">
         <span class="t"><b>NovaDx</b> &nbsp;/&nbsp; Inference Log</span>
@@ -438,6 +546,13 @@ verdict = inferify.<span class="c-fn">capture</span>(
         <div class="stat"><div class="k">IN WINDOW</div><div class="v">20</div></div>
         <div class="stat"><div class="k">REGIME VALID</div><div class="v g">15</div></div>
         <div class="stat"><div class="k">FLAGGED</div><div class="v r">5</div></div>
+      </div>
+      <div class="reasons">
+        <div class="rt">WHY INFERENCES WERE FLAGGED (THIS WINDOW)</div>
+        <div class="rbar"><span>out_of_distribution_input</span><span class="track"><span class="fill" style="width:40%"></span></span><span class="n">2</span></div>
+        <div class="rbar"><span>confidence_below_threshold</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="n">1</span></div>
+        <div class="rbar"><span>deprecated_model_version</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="n">1</span></div>
+        <div class="rbar"><span>input_distribution_shift</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="n">1</span></div>
       </div>
       <div class="scrollx">
         <table class="tbl">
@@ -450,11 +565,51 @@ verdict = inferify.<span class="c-fn">capture</span>(
   </div>
 </section>
 
+<!-- SCENARIOS -->
+<section class="alt">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">06</span> When the record matters</span>
+    <h2>The moment someone asks what your model did.</h2>
+    <p class="lede">The cost of missing evidence is not abstract. It shows up as a specific request, on a specific deadline, that you either can answer instantly or spend weeks reconstructing.</p>
+    <div class="scn">
+      <div class="scenario">
+        <div class="q">A regulator asks you to show the model stayed within its validated use.</div>
+        <div class="split">
+          <div class="row bad"><span class="tag2">WITHOUT</span><span>Weeks reconstructing which inputs fell outside the envelope, from logs that were never built to prove it.</span></div>
+          <div class="row good"><span class="tag2">WITH</span><span>Every out-of-regime inference is already flagged, dated, and exportable as a signed package.</span></div>
+        </div>
+      </div>
+      <div class="scenario">
+        <div class="q">A denied claimant's lawyer requests every input behind the decision.</div>
+        <div class="split">
+          <div class="row bad"><span class="tag2">WITHOUT</span><span>Log archaeology under a discovery deadline, with no proof the records were not altered.</span></div>
+          <div class="row good"><span class="tag2">WITH</span><span>One record, tamper-evident, with the model version, fingerprint, output, and verdict.</span></div>
+        </div>
+      </div>
+      <div class="scenario">
+        <div class="q">A customer disputes an automated outcome and you have 30 days to respond.</div>
+        <div class="split">
+          <div class="row bad"><span class="tag2">WITHOUT</span><span>An engineer pulled off roadmap to trace one decision through the stack by hand.</span></div>
+          <div class="row good"><span class="tag2">WITH</span><span>Pull the record, see whether it was VALID or FLAGGED and why, and answer the same day.</span></div>
+        </div>
+      </div>
+      <div class="scenario">
+        <div class="q">An incident review needs to know which model version was live at 14:42.</div>
+        <div class="split">
+          <div class="row bad"><span class="tag2">WITHOUT</span><span>Guesswork across deploy logs, hoping the timestamps line up with the failure.</span></div>
+          <div class="row good"><span class="tag2">WITH</span><span>The exact version is stamped on every record, so the timeline is unambiguous.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- AUDIENCE -->
 <section>
   <span class="node" aria-hidden="true"></span>
   <div class="shell pad-l">
-    <span class="eyebrow"><span class="idx">05</span> Who it is for</span>
+    <span class="eyebrow"><span class="idx">07</span> Who it is for</span>
     <h2>Where a wrong decision has consequences.</h2>
     <p class="lede">Teams shipping models into workflows where any single decision may later have to be explained, audited, or defended.</p>
     <div class="aud">
@@ -466,11 +621,61 @@ verdict = inferify.<span class="c-fn">capture</span>(
   </div>
 </section>
 
-<!-- RESEARCH -->
-<section id="research" style="border-top:1px solid var(--line);background:var(--paper-2)">
+<!-- COMPARISON -->
+<section class="alt" id="compare">
   <span class="node" aria-hidden="true"></span>
   <div class="shell pad-l">
-    <span class="eyebrow"><span class="idx">06</span> Grounded in research</span>
+    <span class="eyebrow"><span class="idx">08</span> Why Inferify</span>
+    <h2>An evidence layer, not another monitor.</h2>
+    <p class="lede">Monitoring tells you how your model is doing in aggregate, over time. Logging tells you what happened, if you can find it. Neither produces a per-decision, regime-aware, tamper-evident record built to survive an audit. That is the gap Inferify fills.</p>
+    <div class="cmp">
+      <div class="cmp-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Capability</th>
+              <th>Drift &amp; performance monitoring</th>
+              <th>MLOps logging</th>
+              <th>Manual audit</th>
+              <th class="us">Inferify</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Per-decision record</td><td class="no">aggregate only</td><td class="part">unstructured</td><td class="part">after the fact</td><td class="us yes">&#10003; native</td></tr>
+            <tr><td>Regime validity at decision time</td><td class="no">&#10007;</td><td class="no">&#10007;</td><td class="no">&#10007;</td><td class="us yes">&#10003;</td></tr>
+            <tr><td>Tamper-evident and signed</td><td class="no">&#10007;</td><td class="no">&#10007;</td><td class="no">&#10007;</td><td class="us yes">&#10003;</td></tr>
+            <tr><td>Built for audit and legal export</td><td class="no">&#10007;</td><td class="part">DIY</td><td class="part">manual</td><td class="us yes">&#10003;</td></tr>
+            <tr><td>One-line integration</td><td class="part">agents</td><td class="yes">&#10003;</td><td class="no">&#10007;</td><td class="us yes">&#10003;</td></tr>
+            <tr><td>Aggregate model health over time</td><td class="yes">&#10003;</td><td class="part">partial</td><td class="no">&#10007;</td><td class="part">complementary</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cmp-foot">Inferify runs alongside your monitoring stack. Keep watching aggregate health where you do today; Inferify owns the per-decision record that aggregate dashboards were never built to produce.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section>
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">09</span> Security and compliance</span>
+    <h2>Built for environments that cannot leak.</h2>
+    <p class="lede">The teams that need evidence most are the ones with the strictest constraints. Inferify is designed so that adopting it never means relaxing them.</p>
+    <div class="sec">
+      <div class="seci"><div class="mk">&#35;</div><div><h4>Fingerprint, not payload</h4><p>Records store a SHA-256 hash of the input, not the raw data. Sensitive inputs stay where they already live.</p></div></div>
+      <div class="seci"><div class="mk">&#9671;</div><div><h4>Runs in your environment</h4><p>The SDK runs in-process. VPC and on-prem deployment are first-class targets, so data does not have to transit to us.</p></div></div>
+      <div class="seci"><div class="mk">&#8734;</div><div><h4>Tamper-evident by design</h4><p>A SHA-256 hash chain links every record. The export package is verifiable independently of Inferify.</p></div></div>
+      <div class="seci"><div class="mk">&#167;</div><div><h4>Compliance-aware</h4><p>Data residency and access controls are core to the design. SOC 2 Type II is on the roadmap as we move into production deployments.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH -->
+<section class="alt" id="research">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">10</span> Grounded in research</span>
     <h2>The regime signal is not a heuristic.</h2>
     <p class="lede">Inferify productizes peer-reviewed work on the structural limits of model evaluation: the formal reason whole classes of failure stay invisible to validation.</p>
     <div class="papers">
@@ -483,33 +688,117 @@ verdict = inferify.<span class="c-fn">capture</span>(
         <div><div class="ttl">Beyond Accuracy: Epistemic Justification in Trustworthy ML</div><div class="sub">A model can be accurate for the wrong reasons; the gap between predictive success and warranted trust is measurable.</div></div>
       </div>
     </div>
-    <p class="lede" style="margin-top:22px;max-width:640px">The regime validity signal is that research, productized into infrastructure.</p>
+    <p class="lede" style="margin-top:22px;max-width:660px">The regime validity signal is that research, productized into infrastructure.</p>
+  </div>
+</section>
+
+<!-- TEAM -->
+<section id="team">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">11</span> The team</span>
+    <h2>Built by the people who formalized the problem.</h2>
+    <p class="lede">The two papers above are ours. Inferify is not a wrapper on someone else's idea; it is the productization of research we wrote on why model evaluation has structural blind spots.</p>
+    <div class="team">
+      <div class="member">
+        <div class="nm">Poojak Patel</div>
+        <div class="rl">Founder &amp; CEO</div>
+        <ul>
+          <li>First-author, CVPR 2026, presented in Denver. Top-tier computer vision research.</li>
+          <li>First-author oral, AIMLSystems 2025, from a Google Quantum AI collaboration.</li>
+          <li>Co-author of the ICML 2026 work Inferify is built on (EIML and PhilML).</li>
+          <li>Built a prior product to 15,000+ users across 20+ countries, unfunded.</li>
+          <li>Technical founder who ships the product end to end, from SDK to dashboard.</li>
+        </ul>
+      </div>
+      <div class="member">
+        <div class="nm">Maneth Perera</div>
+        <div class="rl">Founder</div>
+        <ul>
+          <li>Aerospace engineering at UIUC: signal processing, radar imaging, controls.</li>
+          <li>UAV synthetic aperture radar research at MIT.</li>
+          <li>Co-author, EIML @ ICML 2026 and a Stanford PAI 2026 paper.</li>
+          <li>Systems-engineering depth in reliability and high-stakes imaging pipelines.</li>
+          <li>Owns the rigor that an evidence product lives or dies on.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="team-line">Most teams selling AI accountability are repackaging monitoring. We are shipping the <span>infrastructure version of our own published research</span> on why those monitors miss what they miss.</p>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="alt">
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">12</span> Roadmap</span>
+    <h2>Where this goes.</h2>
+    <p class="lede">A clear path from a working demo to the system of record for high-stakes model decisions.</p>
+    <div class="road">
+      <div class="phase now">
+        <div class="ph">Now · live</div>
+        <h4>The core record</h4>
+        <ul>
+          <li>Python SDK, one-line capture</li>
+          <li>Regime validity verdict</li>
+          <li>Evidence dashboard</li>
+          <li>Signed, hash-chained export</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph">Next</div>
+        <h4>Into production</h4>
+        <ul>
+          <li>TypeScript SDK</li>
+          <li>VPC and on-prem deployment</li>
+          <li>First paid pilots</li>
+          <li>Custom envelope definitions</li>
+        </ul>
+      </div>
+      <div class="phase">
+        <div class="ph">Then</div>
+        <h4>The standard</h4>
+        <ul>
+          <li>SOC 2 Type II</li>
+          <li>Regulator-ready templates (FDA, model risk)</li>
+          <li>Evidence API and webhooks</li>
+          <li>Cross-team audit workspace</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRACTION -->
+<section>
+  <span class="node" aria-hidden="true"></span>
+  <div class="shell pad-l">
+    <span class="eyebrow"><span class="idx">13</span> Where we are</span>
+    <h2>Early, and honest about it.</h2>
+    <p class="lede">A founding team with the research credibility to own this category, a working demo, and the first design partners testing it on real workflows. We are raising to turn that into production deployments.</p>
+    <div class="trac">
+      <div class="tr"><div class="v">May 2026</div><div class="k">Founded</div></div>
+      <div class="tr"><div class="v">Live</div><div class="k">Working demo since June 2026</div></div>
+      <div class="tr"><div class="v">2</div><div class="k">Design partners in trial</div></div>
+      <div class="tr"><div class="v">Pre-seed</div><div class="k">Raising now</div></div>
+    </div>
   </div>
 </section>
 
 <!-- FAQ -->
-<section>
+<section class="alt">
   <span class="node" aria-hidden="true"></span>
   <div class="shell pad-l">
-    <span class="eyebrow"><span class="idx">07</span> Questions</span>
+    <span class="eyebrow"><span class="idx">14</span> Questions</span>
     <h2>The short version.</h2>
     <div class="faq">
-      <div class="qa">
-        <button>Is this just logging?</button>
-        <div class="a"><p>No. Logs are unstructured and prove nothing about whether a decision should have been trusted. Inferify produces a structured, signed record per inference, with a regime verdict, built to survive an audit or discovery.</p></div>
-      </div>
-      <div class="qa">
-        <button>How much do I have to change?</button>
-        <div class="a"><p>One capture call around your existing prediction. No pipeline rewrite, no model retraining. The SDK runs in-process and the verdict comes back inline, typically in tens of milliseconds.</p></div>
-      </div>
-      <div class="qa">
-        <button>What makes a record tamper-evident?</button>
-        <div class="a"><p>Records are hash-chained, so each one commits to the one before it. Any alteration breaks the chain and is detectable, and the export package is verifiable independently of Inferify.</p></div>
-      </div>
-      <div class="qa">
-        <button>Does my data leave my environment?</button>
-        <div class="a"><p>The record captures an input fingerprint, not the raw input. The design target is teams under strict data-residency and compliance constraints, so the sensitive payload stays where it already lives.</p></div>
-      </div>
+      <div class="qa"><button>Is this just logging?</button><div class="a"><p>No. Logs are unstructured and prove nothing about whether a decision should have been trusted. Inferify produces a structured, signed record per inference, with a regime verdict, built to survive an audit or discovery.</p></div></div>
+      <div class="qa"><button>How much do I have to change?</button><div class="a"><p>One capture call around your existing prediction. No pipeline rewrite, no model retraining. The SDK runs in-process and the verdict comes back inline, typically in tens of milliseconds.</p></div></div>
+      <div class="qa"><button>Does it slow down inference?</button><div class="a"><p>The capture path is designed to add single-digit to low tens of milliseconds and can run without blocking your response. The record is sealed in the background while your model returns as usual.</p></div></div>
+      <div class="qa"><button>What if my model has no defined envelope?</button><div class="a"><p>Inferify still captures the full signed record, and helps you define a validated envelope from your own historical inputs, so the regime signal becomes meaningful rather than guessed.</p></div></div>
+      <div class="qa"><button>Does it work for LLM and agent outputs?</button><div class="a"><p>Yes. Any model that produces an output and a confidence or score can be captured. For agents, the record anchors each decision in a chain you can replay and defend.</p></div></div>
+      <div class="qa"><button>What makes a record tamper-evident?</button><div class="a"><p>Records are hash-chained, so each one commits to the one before it. Any alteration breaks the chain and is detectable, and the export package is verifiable independently of Inferify.</p></div></div>
+      <div class="qa"><button>Does my data leave my environment?</button><div class="a"><p>The record captures an input fingerprint, not the raw input. The design target is teams under strict data-residency and compliance constraints, so the sensitive payload stays where it already lives.</p></div></div>
     </div>
   </div>
 </section>
@@ -543,35 +832,28 @@ verdict = inferify.<span class="c-fn">capture</span>(
   /* ----- change this to whichever inbox you actually check ----- */
   var ACCESS_EMAIL = "tryinferify@gmail.com";
 
-  // mobile menu
   var mb=document.getElementById('menuBtn'),mm=document.getElementById('mobileMenu');
   mb.addEventListener('click',function(){var o=mm.classList.toggle('open');mb.setAttribute('aria-expanded',o)});
   mm.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mm.classList.remove('open');mb.setAttribute('aria-expanded',false)})});
 
-  // faq
-  document.querySelectorAll('.qa button').forEach(function(b){
-    b.addEventListener('click',function(){b.parentElement.classList.toggle('open')});
-  });
+  document.querySelectorAll('.qa button').forEach(function(b){b.addEventListener('click',function(){b.parentElement.classList.toggle('open')})});
 
-  // access forms -> open a prefilled email to the founders
-  function wireForm(formId, inputId, msgId){
-    var form=document.getElementById(formId), input=document.getElementById(inputId), msg=document.getElementById(msgId);
+  function wireForm(formId,inputId,msgId){
+    var form=document.getElementById(formId),input=document.getElementById(inputId),msg=document.getElementById(msgId);
     form.addEventListener('submit',function(e){
       e.preventDefault();
       var email=(input.value||'').trim();
-      if(email.indexOf('@')<1 || email.indexOf('.')<3){input.focus();return;}
+      if(email.indexOf('@')<1||email.indexOf('.')<3){input.focus();return;}
       var subject=encodeURIComponent('Inferify early access request');
       var body=encodeURIComponent("I would like early access to Inferify.\n\nWork email: "+email+"\nCompany: \nModel / use case: \n");
       window.location.href='mailto:'+ACCESS_EMAIL+'?subject='+subject+'&body='+body;
-      form.classList.add('sent');
-      msg.classList.add('show');
+      form.classList.add('sent');msg.classList.add('show');
       msg.textContent='Thanks. Your email app is opening a request to '+ACCESS_EMAIL+'. Hit send and we will be in touch.';
     });
   }
   wireForm('heroAccess','heroEmail','heroSent');
   wireForm('closeAccess','closeEmail','closeSent');
 
-  // nav / menu "Request access" buttons -> jump to the hero form
   document.querySelectorAll('[data-access]').forEach(function(b){
     b.addEventListener('click',function(){
       mm.classList.remove('open');
@@ -581,27 +863,48 @@ verdict = inferify.<span class="c-fn">capture</span>(
     });
   });
 
-  // sample data
-  var outs=['pneumonia: 0.91','normal: 0.96','effusion: 0.78','pneumonia: 0.62','nodule: 0.71','normal: 0.88','cardiomegaly: 0.83','pneumonia: 0.55'];
   function hex(n){var s='';for(var i=0;i<n;i++)s+='0123456789abcdef'[Math.floor(Math.random()*16)];return s}
-  function conf(){return (0.5+Math.random()*0.49).toFixed(2)}
 
-  // hero ticker
-  var ticker=document.getElementById('ticker');
+  /* hero capture card: one decision captured and sealed, cycling (the mechanism) */
+  var samples=[
+    {out:'pneumonia: 0.91',valid:true,reason:'VALID'},
+    {out:'effusion: 0.62',valid:false,reason:'FLAGGED · out_of_distribution'},
+    {out:'normal: 0.96',valid:true,reason:'VALID'},
+    {out:'nodule: 0.55',valid:false,reason:'FLAGGED · confidence_below_threshold'},
+    {out:'cardiomegaly: 0.83',valid:true,reason:'VALID'},
+    {out:'pneumonia: 0.58',valid:false,reason:'FLAGGED · deprecated_model_version'}
+  ];
+  var steps=document.querySelectorAll('.cap-step');
+  var capHash=document.getElementById('capHash'),capOut=document.getElementById('capOut'),
+      capReg=document.getElementById('capReg'),capStamp=document.getElementById('capStamp'),
+      capSeal=document.getElementById('capSeal');
   var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function makeRec(){
-    var flagged=Math.random()<0.28, c=conf();
-    var d=document.createElement('div');d.className='rec';
-    d.innerHTML='<span class="id">inf_'+hex(6)+'</span>'+
-      '<span class="body">'+outs[Math.floor(Math.random()*outs.length)]+' · conf '+c+'</span>'+
-      '<span class="stamp '+(flagged?'f':'v')+'">'+(flagged?'FLAGGED':'VALID')+'</span>';
-    ticker.insertBefore(d,ticker.firstChild);
-    while(ticker.children.length>8)ticker.removeChild(ticker.lastChild);
+  var si=0;
+  function runCapture(){
+    var s=samples[si%samples.length];si++;
+    steps.forEach(function(el){el.classList.remove('on')});
+    capStamp.classList.remove('show');capSeal.classList.remove('show');
+    capHash.textContent='sha256:'+hex(6)+'\u2026';
+    capOut.textContent=s.out;
+    capReg.textContent='checking envelope\u2026';
+    capStamp.className='stamp-lg '+(s.valid?'v':'f');
+    capStamp.textContent=s.valid?'REGIME VALID':'REGIME FLAGGED';
+    var seq=[0,1,2,3];
+    seq.forEach(function(idx,k){setTimeout(function(){steps[idx].classList.add('on')},260*(k+1))});
+    setTimeout(function(){
+      capReg.textContent=s.reason;
+      capReg.style.color=s.valid?'var(--valid)':'var(--flag)';
+    },260*4+120);
+    setTimeout(function(){
+      capStamp.classList.add('show');
+      capSeal.textContent='record inf_'+hex(6)+' · sealed in '+(18+Math.floor(Math.random()*14))+'ms';
+      capSeal.classList.add('show');
+    },260*4+380);
   }
-  for(var i=0;i<7;i++)makeRec();
-  if(!reduce)setInterval(makeRec,2100);
+  runCapture();
+  if(!reduce)setInterval(runCapture,3400);
 
-  // dashboard log
+  /* dashboard log */
   var body=document.getElementById('logBody');
   var rows=[
     ['inf_a3f921','14:42:09','novadx-v2.3.1','pneumonia: 0.91','0.91',true],
